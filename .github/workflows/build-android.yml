@@ -89,11 +89,14 @@ jobs:
           curl -L "${{ inputs.icon_url }}" -o app/src/main/res/mipmap-mdpi/ic_launcher.png
           cp app/src/main/res/mipmap-mdpi/ic_launcher.png app/src/main/res/mipmap-mdpi/ic_launcher_round.png
 
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper --gradle-version 8.5
+
       - name: Build APK
-        run: gradle assembleDebug
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Build AAB
-        run: gradle bundleDebug
+        run: ./gradlew bundleDebug --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
