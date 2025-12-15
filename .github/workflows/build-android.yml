@@ -72,11 +72,22 @@ jobs:
           mkdir -p app/src/main/res/mipmap-xhdpi
           mkdir -p app/src/main/res/mipmap-hdpi
           mkdir -p app/src/main/res/mipmap-mdpi
+
+          # Download launcher icon and also create round variants required by manifest
           curl -L "${{ inputs.icon_url }}" -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          cp app/src/main/res/mipmap-xxxhdpi/ic_launcher.png app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+
           curl -L "${{ inputs.icon_url }}" -o app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp app/src/main/res/mipmap-xxhdpi/ic_launcher.png app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+
           curl -L "${{ inputs.icon_url }}" -o app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp app/src/main/res/mipmap-xhdpi/ic_launcher.png app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+
           curl -L "${{ inputs.icon_url }}" -o app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp app/src/main/res/mipmap-hdpi/ic_launcher.png app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+
           curl -L "${{ inputs.icon_url }}" -o app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp app/src/main/res/mipmap-mdpi/ic_launcher.png app/src/main/res/mipmap-mdpi/ic_launcher_round.png
 
       - name: Build APK
         run: gradle assembleDebug
