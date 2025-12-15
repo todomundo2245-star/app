@@ -27,6 +27,14 @@ on:
         description: 'Callback URL for build status'
         required: true
         type: string
+      supabase_url:
+        description: 'Supabase project URL'
+        required: true
+        type: string
+      supabase_anon_key:
+        description: 'Supabase anon key'
+        required: true
+        type: string
 
 jobs:
   build:
@@ -98,31 +106,54 @@ jobs:
       - name: Build AAB
         run: ./gradlew bundleDebug --no-daemon
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Upload AAB artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug-bundle
-          path: app/build/outputs/bundle/debug/app-debug.aab
-
-      - name: Get artifact URLs and notify callback
+      - name: Upload builds to Supabase Storage
+        id: upload
         run: |
-          RUN_ID=${{ github.run_id }}
-          REPO=${{ github.repository }}
+          BUILD_ID="${{ inputs.build_id }}"
+          SUPABASE_URL="${{ inputs.supabase_url }}"
+          SUPABASE_KEY="${{ inputs.supabase_anon_key }}"
           
-          # Notify success
+          APK_FILE="app/build/outputs/apk/debug/app-debug.apk"
+          AAB_FILE="app/build/outputs/bundle/debug/app-debug.aab"
+          
+          # Upload APK to Supabase Storage
+          echo "Uploading APK..."
+          APK_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/storage/v1/object/app-builds/${BUILD_ID}/app.apk" \
+            -H "Authorization: Bearer ${SUPABASE_KEY}" \
+            -H "apikey: ${SUPABASE_KEY}" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            -H "x-upsert: true" \
+            --data-binary @"${APK_FILE}")
+          
+          echo "APK upload response: ${APK_RESPONSE}"
+          
+          # Upload AAB to Supabase Storage
+          echo "Uploading AAB..."
+          AAB_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/storage/v1/object/app-builds/${BUILD_ID}/app.aab" \
+            -H "Authorization: Bearer ${SUPABASE_KEY}" \
+            -H "apikey: ${SUPABASE_KEY}" \
+            -H "Content-Type: application/octet-stream" \
+            -H "x-upsert: true" \
+            --data-binary @"${AAB_FILE}")
+          
+          echo "AAB upload response: ${AAB_RESPONSE}"
+          
+          # Generate public URLs
+          APK_URL="${SUPABASE_URL}/storage/v1/object/public/app-builds/${BUILD_ID}/app.apk"
+          AAB_URL="${SUPABASE_URL}/storage/v1/object/public/app-builds/${BUILD_ID}/app.aab"
+          
+          echo "apk_url=${APK_URL}" >> $GITHUB_OUTPUT
+          echo "aab_url=${AAB_URL}" >> $GITHUB_OUTPUT
+
+      - name: Notify success
+        run: |
           curl -X POST "${{ inputs.callback_url }}" \
             -H "Content-Type: application/json" \
             -d '{
               "build_id": "${{ inputs.build_id }}",
               "status": "completed",
-              "apk_url": "https://github.com/'"$REPO"'/actions/runs/'"$RUN_ID"'/artifacts",
-              "aab_url": "https://github.com/'"$REPO"'/actions/runs/'"$RUN_ID"'/artifacts"
+              "apk_url": "${{ steps.upload.outputs.apk_url }}",
+              "aab_url": "${{ steps.upload.outputs.aab_url }}"
             }'
 
       - name: Notify failure
