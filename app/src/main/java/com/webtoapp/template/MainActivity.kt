@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
             webView.goBack()
             return true
         }
-        return super.onKeyDown(keyCode, event)
+        return event?.let { super.onKeyDown(keyCode, it) } ?: false
     }
 
     override fun onBackPressed() {
