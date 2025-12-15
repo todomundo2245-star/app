@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
-    private val url = "https://example.com"
+    private val url: String? = "https://example.com"
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,8 +38,9 @@ class MainActivity : AppCompatActivity() {
                 displayZoomControls = false
                 mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             }
-            
-            loadUrl(url)
+
+            val safeUrl: String = url ?: "https://example.com"
+            loadUrl(safeUrl)
         }
     }
 
